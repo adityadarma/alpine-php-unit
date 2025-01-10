@@ -1,0 +1,28 @@
+{
+    "listeners": {
+      "*:8000": {
+        "pass": "routes"
+      }
+    },
+    "routes": [
+      {
+        "match": {
+          "host": "*",
+          "uri": "!/index.php"
+        },
+        "action": {
+          "share": "/app/public$uri",
+          "fallback": {
+            "pass": "applications/default"
+          }
+        }
+      }
+    ],
+    "applications": {
+      "default": {
+        "type": "php",
+        "root": "/app/public/",
+        "script": "index.php"
+      }
+    }
+  }
