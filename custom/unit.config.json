@@ -1,28 +1,36 @@
 {
     "listeners": {
-      "*:8000": {
-        "pass": "routes"
-      }
+        "*:8000": {
+            "pass": "routes"
+        }
     },
     "routes": [
-      {
-        "match": {
-          "host": "*",
-          "uri": "!/index.php"
+        {
+            "match": {
+                "host": "*",
+                "uri": "!/index.php"
+            },
+            "action": {
+                "share": "/app/public$uri",
+                "fallback": {
+                    "pass": "applications/default"
+                }
+            }
         },
-        "action": {
-          "share": "/app/public$uri",
-          "fallback": {
-            "pass": "applications/default"
-          }
+        {
+            "match": {
+                "uri": "/index.php"
+            },
+            "action": {
+                "pass": "applications/default"
+            }
         }
-      }
     ],
     "applications": {
-      "default": {
-        "type": "php",
-        "root": "/app/public/",
-        "script": "index.php"
-      }
+        "default": {
+            "type": "php",
+            "root": "/app/public/",
+            "script": "index.php"
+        }
     }
-  }
+}

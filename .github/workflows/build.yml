@@ -1,4 +1,4 @@
-name: Docker Alpine Linux Lightweight
+name: Lightweight Image and Faster perfomance
 
 on:
   push:
@@ -94,4 +94,4 @@ jobs:
             --build-arg="PHP_VERSION=${{ matrix.php_version }}" \
             --build-arg="PHP_NUMBER=${{ matrix.php_number }}" \
             $EXTRA_ARGS \
-            --tag adityadarma/alpine-php-nginx:${{ matrix.tag_suffix }} .
+            --tag adityadarma/alpine-php-unit:${{ matrix.tag_suffix }} .
