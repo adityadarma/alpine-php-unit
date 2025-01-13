@@ -57,7 +57,6 @@ RUN if [ ! -e /usr/bin/php ]; then ln -s /usr/bin/php${PHP_NUMBER} /usr/bin/php;
 COPY --from=composer /usr/bin/composer /usr/bin/composer
 
 # Copy file configurator
-COPY custom/www.conf /etc/php${PHP_NUMBER}/php-fpm.d/www.conf
 COPY custom/php-custom.ini /etc/php${PHP_NUMBER}/conf.d/custom.ini
 COPY custom/unit.config.json /var/lib/unit/conf.json
 COPY custom/supervisord-${ENVIROMENT}.conf /etc/supervisord.conf

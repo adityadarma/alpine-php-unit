@@ -7,11 +7,10 @@
     "routes": [
         {
             "match": {
-                "host": "*",
-                "uri": "!/index.php"
+                "uri": "/*"
             },
             "action": {
-                "share": "/app/public$uri",
+                "share": "/app/public",
                 "fallback": {
                     "pass": "applications/default"
                 }
@@ -24,13 +23,37 @@
             "action": {
                 "pass": "applications/default"
             }
+        },
+        {
+            "match": {
+                "uri": "/"
+            },
+            "action": {
+                "share": "/app/public",
+                "fallback": {
+                    "pass": "applications/default"
+                }
+            }
         }
     ],
     "applications": {
         "default": {
             "type": "php",
             "root": "/app/public/",
-            "script": "index.php"
+            "script": "index.php",
+            "processes": {
+                "max": 50,
+                "spare": 5,
+                "idle_timeout": 10
+            }
+        }
+    },
+    "settings": {
+        "http": {
+            "body_read_timeout": 60,
+            "header_read_timeout": 60,
+            "idle_timeout": 60,
+            "max_body_size": 10485760
         }
     }
 }
