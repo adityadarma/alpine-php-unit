@@ -10,21 +10,17 @@ autostart=true
 autorestart=true
 startretries=0
 priority=5
-stdout_logfile=/var/log/unit/access.log
-stderr_logfile=/var/log/unit/error.log
-stdout_logfile_maxbytes=10MB
-stderr_logfile_maxbytes=10MB
 
 [program:laravel-queue]
 command=/usr/bin/php /app/artisan queue:work
-autostart=true
+autostart=${WITH_QUEUE}
 autorestart=true
 startretries=0
 priority=10
 
 [program:laravel-schedule]
 command=/usr/bin/php /app/artisan schedule:work
-autostart=true
+autostart=${WITH_SCHEDULE}
 autorestart=true
 startretries=0
 priority=15
