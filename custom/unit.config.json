@@ -7,37 +7,29 @@
     "routes": [
         {
             "match": {
-                "uri": "/"
+                "uri": [
+                    "/",
+                    "/index.php"
+                ]
             },
             "action": {
                 "pass": "applications/default"
             }
         },
         {
-            "match": {
-                "uri": "/index.php"
-            },
-            "action": {
-                "pass": "applications/default"
-            }
-        },
-        {
-            "match": {
-                "uri": "!/index.php"
-            },
             "action": {
                 "share": "/app/public$uri",
                 "fallback": {
                     "pass": "applications/default"
                 },
                 "response_headers": {
-                    "Cache-Control": "public, max-age=3600, must-revalidate, no-transform",
+                    "Cache-Control": "public, max-age=31536000, immutable",
                     "Cross-Origin-Embedder-Policy": "require-corp",
                     "Cross-Origin-Resource-Policy": "same-origin",
-                    "Referrer-Policy": "no-referrer",
+                    "Referrer-Policy": "strict-origin-when-cross-origin",
                     "X-Content-Type-Options": "nosniff",
-                    "X-Frame-Options": "deny",
-                    "X-XSS-Protection": "1; mode=block"
+                    "X-Frame-Options": "SAMEORIGIN",
+                    "X-XSS-Protection": "0"
                 }
             }
         }
@@ -46,19 +38,19 @@
         "default": {
             "type": "php",
             "root": "/app/public/",
-            "script": "index.php",
             "processes": {
                 "max": 50,
-                "spare": 5,
-                "idle_timeout": 10
+                "spare": 20,
+                "idle_timeout": 60
             }
         }
     },
     "settings": {
         "http": {
             "body_read_timeout": 120,
-            "header_read_timeout": 120,
-            "idle_timeout": 10,
+            "header_read_timeout": 30,
+            "send_timeout": 120,
+            "idle_timeout": 60,
             "max_body_size": 52428800
         }
     },

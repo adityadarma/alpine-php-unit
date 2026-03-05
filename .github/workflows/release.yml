@@ -1,0 +1,107 @@
+name: release
+
+on:
+  workflow_dispatch
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          # Define all combinations of Alpine and PHP versions
+          - alpine_version: "3.15"
+            php_version: "7.4"
+            php_number: "7"
+            tag_suffix: "7.4"
+
+          - alpine_version: "3.15"
+            php_version: "7.4"
+            php_number: "7"
+            variant: "mini"
+            tag_suffix: "7.4-mini"
+
+          - alpine_version: "3.16"
+            php_version: "8.0"
+            php_number: "8"
+            tag_suffix: "8.0"
+
+          - alpine_version: "3.19"
+            php_version: "8.1"
+            php_number: "81"
+            tag_suffix: "8.1"
+
+          - alpine_version: "3.19"
+            php_version: "8.1"
+            php_number: "81"
+            variant: "mini"
+            tag_suffix: "8.1-mini"
+
+          - alpine_version: "3.22"
+            php_version: "8.2"
+            php_number: "82"
+            tag_suffix: "8.2"
+
+          - alpine_version: "3.22"
+            php_version: "8.3"
+            php_number: "83"
+            tag_suffix: "8.3"
+
+          - alpine_version: "3.22"
+            php_version: "8.3"
+            php_number: "83"
+            variant: "mini"
+            tag_suffix: "8.3-mini"
+
+          - alpine_version: "3.22"
+            php_version: "8.3"
+            php_number: "83"
+            variant: "node"
+            tag_suffix: "8.3-node"
+
+          - alpine_version: "3.22"
+            php_version: "8.4"
+            php_number: "84"
+            tag_suffix: "8.4"
+
+          - alpine_version: "3.22"
+            php_version: "8.4"
+            php_number: "84"
+            variant: "mini"
+            tag_suffix: "8.4-mini"
+
+          - alpine_version: "3.22"
+            php_version: "8.4"
+            php_number: "84"
+            variant: "node"
+            tag_suffix: "8.4-node"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        run: |
+          # Set environment-specific build argument if defined
+          VARIANT_ARGS=""
+          if [ "${{ matrix.variant }}" != "" ]; then
+            VARIANT_ARGS="--build-arg VARIANT=${{ matrix.variant }}"
+          fi
+
+          # Build and push the image
+          docker buildx build --push \
+            --platform=linux/arm64/v8,linux/amd64,linux/s390x \
+            --build-arg="ALPINE_VERSION=${{ matrix.alpine_version }}" \
+            --build-arg="PHP_VERSION=${{ matrix.php_version }}" \
+            --build-arg="PHP_NUMBER=${{ matrix.php_number }}" \
+            $VARIANT_ARGS \
+            --tag adityadarma/alpine-php-unit:${{ matrix.tag_suffix }} .

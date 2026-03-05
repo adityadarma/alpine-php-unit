@@ -4,7 +4,7 @@ FROM alpine:${ALPINE_VERSION}
 
 ARG PHP_VERSION
 ARG PHP_NUMBER
-ARG ENVIROMENT=general
+ARG ENVIRONMENT=general
 ARG VARIANT=full
 
 ENV VALIDATE_TIMESTAMPS=1
@@ -12,6 +12,10 @@ ENV REVALIDATE_FREQ=2
 ENV TIMEZONE="UTC"
 ENV WITH_QUEUE=false
 ENV WITH_SCHEDULE=false
+ENV PHP_NUMBER=${PHP_NUMBER}
+ENV PHP_WORKER_MEMORY=32
+ENV UNIT_MAX_PROCESSES=
+ENV UNIT_SPARE_PROCESSES=
 
 # Set label information
 LABEL org.opencontainers.image.maintainer="Aditya Darma <adhit.boys1@gmail.com>"
@@ -39,33 +43,34 @@ RUN echo "VARIANT=${VARIANT}" && apk add --update --no-cache \
     php${PHP_NUMBER}-openssl \
     php${PHP_NUMBER}-tokenizer \
     && case "$VARIANT" in \
-        mini) apk add --no-cache \
-            php${PHP_NUMBER}-bcmath \
-            php${PHP_NUMBER}-iconv \
-            php${PHP_NUMBER}-pdo_mysql \
-            php${PHP_NUMBER}-pdo_sqlite \
-            php${PHP_NUMBER}-phar \
-            php${PHP_NUMBER}-session ;; \
-        full) apk add --no-cache \
-            mysql-client \
-            php${PHP_NUMBER}-bcmath \
-            php${PHP_NUMBER}-exif \
-            php${PHP_NUMBER}-gd \
-            php${PHP_NUMBER}-iconv \
-            php${PHP_NUMBER}-mysqli \
-            php${PHP_NUMBER}-pdo_mysql \
-            php${PHP_NUMBER}-pdo_pgsql \
-            php${PHP_NUMBER}-pdo_sqlite \
-            php${PHP_NUMBER}-pecl-imagick \
-            php${PHP_NUMBER}-phar \
-            php${PHP_NUMBER}-session \
-            php${PHP_NUMBER}-simplexml \
-            php${PHP_NUMBER}-xml \
-            php${PHP_NUMBER}-xmlreader \
-            php${PHP_NUMBER}-xmlwriter \
-            php${PHP_NUMBER}-zip \
-            php${PHP_NUMBER}-zlib ;; \
+    mini) apk add --no-cache \
+    php${PHP_NUMBER}-bcmath \
+    php${PHP_NUMBER}-iconv \
+    php${PHP_NUMBER}-pdo_mysql \
+    php${PHP_NUMBER}-pdo_sqlite \
+    php${PHP_NUMBER}-phar \
+    php${PHP_NUMBER}-session ;; \
+    full|node) apk add --no-cache \
+    mysql-client \
+    php${PHP_NUMBER}-bcmath \
+    php${PHP_NUMBER}-exif \
+    php${PHP_NUMBER}-gd \
+    php${PHP_NUMBER}-iconv \
+    php${PHP_NUMBER}-mysqli \
+    php${PHP_NUMBER}-pdo_mysql \
+    php${PHP_NUMBER}-pdo_pgsql \
+    php${PHP_NUMBER}-pdo_sqlite \
+    php${PHP_NUMBER}-pecl-imagick \
+    php${PHP_NUMBER}-phar \
+    php${PHP_NUMBER}-session \
+    php${PHP_NUMBER}-simplexml \
+    php${PHP_NUMBER}-xml \
+    php${PHP_NUMBER}-xmlreader \
+    php${PHP_NUMBER}-xmlwriter \
+    php${PHP_NUMBER}-zip \
+    php${PHP_NUMBER}-zlib ;; \
     esac \
+    && if [ "$VARIANT" = "node" ]; then apk add --no-cache nodejs npm; fi \
     && rm -rf /var/cache/apk/*
 
 # Symlink if not found
@@ -77,20 +82,29 @@ COPY --from=composer /usr/bin/composer /usr/bin/composer
 # Copy file configurator
 COPY custom/php.ini /etc/php${PHP_NUMBER}/conf.d/custom.ini
 COPY custom/unit.config.json /var/lib/unit/conf.json
-COPY custom/supervisord.conf.template /etc/supervisord.conf.template
+COPY custom/supervisord.conf /etc/supervisord.conf.template
 
-# Setup document root for application
+# Setup document root and log directories
 WORKDIR /app
+RUN mkdir -p /app/public /var/log/unit /var/log/supervisor
 
-# Make sure files/folders needed by the processes are accessable when they run under the nobody user
-RUN chown -R nobody:nogroup /app /run /var/lib/unit /var/log /etc/supervisord.conf 
+# Pre-load Unit configuration into statedir at build time
+RUN /usr/sbin/unitd --no-daemon --log /dev/null & \
+    until [ -S /run/control.unit.sock ]; do sleep 0.1; done && \
+    curl -sf -X PUT --unix-socket /run/control.unit.sock \
+    --data-binary @/var/lib/unit/conf.json http://localhost/config && \
+    kill $(cat /run/unit.pid) 2>/dev/null; \
+    rm -f /run/control.unit.sock /run/unit.pid
+
+# Make sure files/folders needed by the processes are accessible
+RUN chown -R unit:unit /app /run /var/lib/unit /var/log /etc/supervisord.conf
 
 # Copy file entrypoint to container
 COPY custom/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Switch to use a non-root user from here on
-USER nobody
+# Switch to non-root user for security
+USER unit
 
 # Expose the port nginx is reachable on
 EXPOSE 8000
