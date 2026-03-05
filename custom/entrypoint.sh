@@ -15,8 +15,9 @@ _max=$(( (_ram_mb * 80 / 100) / _worker_mem ))
 [ $_max -gt $(( _cpu * 8 )) ] && _max=$(( _cpu * 8 ))
 [ $_max -lt 5   ] && _max=5
 [ $_max -gt 200 ] && _max=200
-_spare=$(( _max * 40 / 100 ))
+_spare=$(( _max * 10 / 100 ))
 [ $_spare -lt 2 ] && _spare=2
+[ $_spare -gt $(( _cpu )) ] && _spare=$(( _cpu ))
 
 export UNIT_MAX_PROCESSES=${UNIT_MAX_PROCESSES:-$_max}
 export UNIT_SPARE_PROCESSES=${UNIT_SPARE_PROCESSES:-$_spare}

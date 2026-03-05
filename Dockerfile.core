@@ -1,0 +1,35 @@
+ARG ALPINE_VERSION
+
+FROM alpine:${ALPINE_VERSION}
+
+LABEL org.opencontainers.image.maintainer="Aditya Darma <adhit.boys1@gmail.com>"
+LABEL org.opencontainers.image.description="Lightweight NGINX Unit Core Image on Alpine Linux."
+
+# Core env vars
+ENV TIMEZONE="UTC"
+
+# Core packages
+RUN apk add --update --no-cache \
+    curl \
+    supervisor \
+    gettext \
+    unit \
+    && rm -rf /var/cache/apk/*
+
+# Setup document root and log directories
+WORKDIR /app
+RUN mkdir -p /app/public /var/log/unit /var/log/supervisor
+
+# Copy configurations and scripts
+COPY custom/supervisord.conf /etc/supervisord.conf.template
+COPY custom/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Assign permissions
+RUN chown -R unit:unit /app /run /var/lib/unit /var/log /etc/supervisord.conf
+
+# Expose the port nginx is reachable on
+EXPOSE 8000
+
+# Start entrypoint
+ENTRYPOINT ["/entrypoint.sh"]

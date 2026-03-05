@@ -1,15 +1,15 @@
 ARG ALPINE_VERSION
 
-FROM alpine:${ALPINE_VERSION}
+FROM adityadarma/alpine-php-unit:core-${ALPINE_VERSION}
+
+USER root
 
 ARG PHP_VERSION
 ARG PHP_NUMBER
-ARG ENVIRONMENT=general
 ARG VARIANT=full
 
 ENV VALIDATE_TIMESTAMPS=1
 ENV REVALIDATE_FREQ=2
-ENV TIMEZONE="UTC"
 ENV WITH_QUEUE=false
 ENV WITH_SCHEDULE=false
 ENV PHP_NUMBER=${PHP_NUMBER}
@@ -18,20 +18,11 @@ ENV UNIT_MAX_PROCESSES=
 ENV UNIT_SPARE_PROCESSES=
 
 # Set label information
-LABEL org.opencontainers.image.maintainer="Aditya Darma <adhit.boys1@gmail.com>"
-LABEL org.opencontainers.image.description="Lightweight Image and Faster perfomance."
-LABEL org.opencontainers.image.os="Alpine Linux ${ALPINE_VERSION}"
 LABEL org.opencontainers.image.php="${PHP_VERSION}"
 
 # Install package
 RUN echo "VARIANT=${VARIANT}" && apk add --update --no-cache \
-    curl \
-    git \
-    nano \
-    unit \
     unit-php${PHP_NUMBER} \
-    supervisor \
-    gettext \
     php${PHP_NUMBER} \
     php${PHP_NUMBER}-curl \
     php${PHP_NUMBER}-ctype \
@@ -82,11 +73,9 @@ COPY --from=composer /usr/bin/composer /usr/bin/composer
 # Copy file configurator
 COPY custom/php.ini /etc/php${PHP_NUMBER}/conf.d/custom.ini
 COPY custom/unit.config.json /var/lib/unit/conf.json
-COPY custom/supervisord.conf /etc/supervisord.conf.template
 
-# Setup document root and log directories
+# Setup document root
 WORKDIR /app
-RUN mkdir -p /app/public /var/log/unit /var/log/supervisor
 
 # Pre-load Unit configuration into statedir at build time
 RUN /usr/sbin/unitd --no-daemon --log /dev/null & \
@@ -99,15 +88,5 @@ RUN /usr/sbin/unitd --no-daemon --log /dev/null & \
 # Make sure files/folders needed by the processes are accessible
 RUN chown -R unit:unit /app /run /var/lib/unit /var/log /etc/supervisord.conf
 
-# Copy file entrypoint to container
-COPY custom/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
 # Switch to non-root user for security
 USER unit
-
-# Expose the port nginx is reachable on
-EXPOSE 8000
-
-# Start entrypoint
-ENTRYPOINT ["/entrypoint.sh"]
